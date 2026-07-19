@@ -1,0 +1,105 @@
+diff --git a/README.md b/README.md
+index 49dd3bf..698c3de 100644
+--- a/README.md
++++ b/README.md
+@@ -2,25 +2,30 @@
+ 
+ An unofficial Android client for selected public Alaska Department of Fish and Game fish-count projects.
+ 
+-## Test-build scope
++## Current test build
+ 
+ - Android 13 minimum (`minSdk 33`), Android 16 target (`targetSdk 36`).
+-- Official ADF&G JSON export endpoint with a conservative HTML table fallback.
++- Official ADF&G JSON export endpoint with a conservative HTML-table fallback.
+ - Room cache, transactional update storage, first-sync baseline protection, numeric fingerprints, and durable notification deduplication.
+-- WorkManager unique periodic work, network/Wi-Fi constraints, exponential backoff, four-hour source throttle, and a 24-hour circuit breaker after repeated failures.
+-- Alaska-time reporting, manual refresh, notification permission explanation, grouped alerts, quiet-hour deferral, daily-summary mode, project muting, and deep links.
+-- Original salmon heat-map notification, launcher, animated in-app identity, accessible heat cells, and sparkline.
++- Battery-conscious WorkManager synchronization with network constraints and exponential backoff.
++- Alaska-time reporting, manual refresh, notification permission controls, grouped alerts, quiet-hour handling, project muting, and deep links.
++- Settings-based notification simulations for new counts, revised counts, grouped updates, and custom fake alerts.
++- Seven-day, 14-day, and full-season chart ranges with previous-year comparison.
+ - Local-only followed-project and preference storage. No account or analytics SDK is included.
+ 
+-## Important limitations of this first test APK
++## Secret test tools
+ 
+-The ADF&G export is a public endpoint but not a documented application API. The parser accepts several common object/array shapes and falls back to the official HTML table. Source format changes can still require an app update. Counts do not guarantee fish at a particular fishing spot or fishing success.
++Triple-tap the fish in the home-screen header to unlock the test-alert controls in Settings. Custom test notifications are always prefixed with `TEST` and use the same Android notification channel as real fish-count updates.
++
++## Important limitations
++
++The ADF&G export is a public endpoint but not a documented application API. The parser accepts several common object and array shapes and falls back to the official HTML table. Source-format changes can still require an app update. Counts do not guarantee fish at a particular fishing spot or fishing success.
+ 
+ The first successful sync establishes a baseline and intentionally does not announce historical records. A later changed official record is eligible for notification after it has been committed to Room.
+ 
+ ## Build
+ 
+-Use Android Studio Quail 2 or newer, JDK 17, Android SDK 36, and Gradle 9.6:
++Use Android Studio with JDK 17 and Android SDK 36, or run:
+ 
+ ```bash
+ gradle testDebugUnitTest assembleDebug
+diff --git a/app/build.gradle.kts b/app/build.gradle.kts
+index ef933b1..a4dd9da 100644
+--- a/app/build.gradle.kts
++++ b/app/build.gradle.kts
+@@ -10,8 +10,8 @@ android {
+         applicationId = "com.tripperdee.deraevfish"
+         minSdk = 33
+         targetSdk = 36
+-        versionCode = 2
+-        versionName = "0.2.0-polished-test"
++        versionCode = 3
++        versionName = "0.3.0-secret-alerts"
+ 
+         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+         javaCompileOptions {
+diff --git a/app/src/main/java/com/tripperdee/deraevfish/MainActivity.java b/app/src/main/java/com/tripperdee/deraevfish/MainActivity.java
+index e30e5ee..fd001f7 100644
+--- a/app/src/main/java/com/tripperdee/deraevfish/MainActivity.java
++++ b/app/src/main/java/com/tripperdee/deraevfish/MainActivity.java
+@@ -61,6 +61,7 @@ public class MainActivity extends Activity {
+     private static final int SOFT_BLUE = Color.rgb(225, 241, 246);
+     private static final int BORDER = Color.rgb(194, 218, 225);
+     private static final ZoneId ALASKA = ZoneId.of("America/Anchorage");
++    private static final long SPLASH_DURATION_MS = 2600L;
+ 
+     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+     private LinearLayout projectContainer;
+@@ -68,6 +69,8 @@ public class MainActivity extends Activity {
+     private ProgressBar progress;
+     private TextView checkButton;
+     private SharedPreferences prefs;
++    private int fishTapCount;
++    private long lastFishTapAt;
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -84,23 +87,64 @@ public class MainActivity extends Activity {
+ 
+     private void showSplash() {
+         FrameLayout splash = new FrameLayout(this);
+-        splash.setBackground(gradient(RIVER_DARK, Color.rgb(9, 78, 101), GradientDrawable.Orientation.TL_BR, 0));
++        splash.setBackground(gradient(RIVER_DARK, Color.rgb(9, 86, 111), GradientDrawable.Orientation.TL_BR, 0));
++
+         LinearLayout center = new LinearLayout(this);
+         center.setOrientation(LinearLayout.VERTICAL);
+         center.setGravity(Gravity.CENTER);
++        center.setPadding(dp(28), dp(72), dp(28), dp(64));
++        center.setAlpha(0f);
++        center.setTranslationY(dp(18));
++
++        FrameLayout iconStage = new FrameLayout(this);
++        View halo = new View(this);
++        halo.setBackground(rounded(Color.argb(34, 255, 255, 255), dp(100), Color.argb(70, 255, 255, 255)));
++        FrameLayout.LayoutParams haloParams = new FrameLayout.LayoutParams(dp(184), dp(184), Gravity.CENTER);
++        iconStage.addView(halo, haloParams);
++
+         HeatSalmonView icon = new HeatSalmonView(this);
+-        center.addView(icon, new LinearLayout.LayoutParams(dp(190), dp(138)));
+-        TextView title = text("The DeRaeve super special\nsecret fishing app", 28, Color.WHITE, true);
++        icon.setScaleX(0.82f);
++        icon.setScaleY(0.82f);
++        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(21

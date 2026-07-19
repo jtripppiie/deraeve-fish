@@ -59,10 +59,13 @@ public class SettingsActivity extends Activity {
     private RadioGroup modes;
     private EditText thresholdFish;
     private EditText thresholdPercent;
+    private EditText fakeAlertTitle;
+    private EditText fakeAlertBody;
     private LinearLayout rootLayout;
     private LinearLayout debugPanel;
     private TextView syncInfo;
     private NotificationHelper.TestType pendingTest;
+    private boolean pendingCustomTest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +120,7 @@ public class SettingsActivity extends Activity {
 
         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            hero.setPadding(dp(20), bars.top + dp(14), dp(20), dp(21));
+            hero.setPadding(dp(20), bars.top + dp(24), dp(20), dp(24));
             root.setPadding(0, 0, 0, bars.bottom + dp(14));
             return insets;
         });
@@ -207,24 +210,37 @@ public class SettingsActivity extends Activity {
         diagnostics.addView(androidSettings);
         content.addView(diagnostics, margin(0, 0, 0, 14));
 
-        LinearLayout developer = card("Developer / test mode", "Test notifications are clearly marked and use the same system notification channel as real count updates.");
-        debugMode = toggle("Enable test tools", prefs.getBoolean("debug_mode", false));
-        developer.addView(debugMode);
-        debugPanel = new LinearLayout(this);
-        debugPanel.setOrientation(LinearLayout.VERTICAL);
-        TextView testUpdate = testButton("SEND TEST NEW-COUNT NOTIFICATION");
-        testUpdate.setOnClickListener(view -> sendTest(NotificationHelper.TestType.NEW_COUNT));
-        debugPanel.addView(testUpdate, margin(0, 8, 0, 0));
-        TextView testRevision = secondaryButton("SEND TEST REVISION NOTIFICATION");
-        testRevision.setOnClickListener(view -> sendTest(NotificationHelper.TestType.REVISION));
-        debugPanel.addView(testRevision, margin(0, 8, 0, 0));
-        TextView testGroup = secondaryButton("SEND TEST GROUPED UPDATES");
-        testGroup.setOnClickListener(view -> sendTest(NotificationHelper.TestType.GROUPED));
-        debugPanel.addView(testGroup, margin(0, 8, 0, 0));
-        debugPanel.setVisibility(debugMode.isChecked() ? View.VISIBLE : View.GONE);
-        developer.addView(debugPanel);
-        debugMode.setOnCheckedChangeListener((buttonView, isChecked) -> debugPanel.setVisibility(isChecked ? View.VISIBLE : View.GONE));
-        content.addView(developer, margin(0, 0, 0, 16));
+        if (prefs.getBoolean("developer_unlocked", false)) {
+            LinearLayout developer = card("Secret test alerts", "Unlocked by triple-tapping the fish. These alerts are clearly marked as tests and appear in the normal Android notification shade.");
+            debugMode = toggle("Enable test tools", prefs.getBoolean("debug_mode", true));
+            developer.addView(debugMode);
+            debugPanel = new LinearLayout(this);
+            debugPanel.setOrientation(LinearLayout.VERTICAL);
+
+            debugPanel.addView(fieldLabel("Custom alert title"));
+            fakeAlertTitle = textInput("Big Kenai push detected", "Alert title", true);
+            debugPanel.addView(fakeAlertTitle);
+            debugPanel.addView(fieldLabel("Custom alert message"));
+            fakeAlertBody = textInput("Fish are moving. Check the newest Kenai count before heading out.", "Alert message", false);
+            debugPanel.addView(fakeAlertBody);
+            TextView customAlert = testButton("SEND CUSTOM FAKE ALERT");
+            customAlert.setOnClickListener(view -> sendCustomTest());
+            debugPanel.addView(customAlert, margin(0, 10, 0, 0));
+
+            TextView testUpdate = secondaryButton("SEND TEST NEW-COUNT NOTIFICATION");
+            testUpdate.setOnClickListener(view -> sendTest(NotificationHelper.TestType.NEW_COUNT));
+            debugPanel.addView(testUpdate, margin(0, 8, 0, 0));
+            TextView testRevision = secondaryButton("SEND TEST REVISION NOTIFICATION");
+            testRevision.setOnClickListener(view -> sendTest(NotificationHelper.TestType.REVISION));
+            debugPanel.addView(testRevision, margin(0, 8, 0, 0));
+            TextView testGroup = secondaryButton("SEND TEST GROUPED UPDATES");
+            testGroup.setOnClickListener(view -> sendTest(NotificationHelper.TestType.GROUPED));
+            debugPanel.addView(testGroup, margin(0, 8, 0, 0));
+            debugPanel.setVisibility(debugMode.isChecked() ? View.VISIBLE : View.GONE);
+            developer.addView(debugPanel);
+            debugMode.setOnCheckedChangeListener((buttonView, isChecked) -> debugPanel.setVisibility(isChecked ? View.VISIBLE : View.GONE));
+            content.addView(developer, margin(0, 0, 0, 16));
+        }
 
         TextView save = actionButton("SAVE SETTINGS");
         save.setOnClickListener(view -> save());
@@ -270,7 +286,7 @@ public class SettingsActivity extends Activity {
                 .putBoolean("notifications_master", master.isChecked())
                 .putBoolean("sync_enabled", sync.isChecked())
                 .putBoolean("wifi_only", wifi.isChecked())
-                .putBoolean("debug_mode", debugMode.isChecked())
+                .putBoolean("debug_mode", debugMode == null ? prefs.getBoolean("debug_mode", false) : debugMode.isChecked())
                 .putString("notification_mode", selectedMode())
                 .putInt("quiet_start", quietStart.getSelectedItemPosition())
                 .putInt("quiet_end", quietEnd.getSelectedItemPosition());
@@ -313,6 +329,7 @@ public class SettingsActivity extends Activity {
     private void sendTest(NotificationHelper.TestType type) {
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             pendingTest = type;
+            pendingCustomTest = false;
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATION);
             return;
         }
@@ -320,13 +337,31 @@ public class SettingsActivity extends Activity {
         Toast.makeText(this, "Test notification sent to the notification shade", Toast.LENGTH_LONG).show();
     }
 
+    private void sendCustomTest() {
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            pendingTest = null;
+            pendingCustomTest = true;
+            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, REQ_NOTIFICATION);
+            return;
+        }
+        String title = fakeAlertTitle == null ? "Fish alert" : fakeAlertTitle.getText().toString().trim();
+        String body = fakeAlertBody == null ? "This is a simulated DeRaeve notification." : fakeAlertBody.getText().toString().trim();
+        NotificationHelper.sendCustomTestNotification(this, title, body);
+        Toast.makeText(this, "Custom fake alert sent to the notification shade", Toast.LENGTH_LONG).show();
+    }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQ_NOTIFICATION && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && pendingTest != null) {
-            NotificationHelper.TestType type = pendingTest;
-            pendingTest = null;
-            sendTest(type);
+        if (requestCode == REQ_NOTIFICATION && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            if (pendingTest != null) {
+                NotificationHelper.TestType type = pendingTest;
+                pendingTest = null;
+                sendTest(type);
+            } else if (pendingCustomTest) {
+                pendingCustomTest = false;
+                sendCustomTest();
+            }
         }
     }
 
@@ -419,6 +454,24 @@ public class SettingsActivity extends Activity {
         value.setLineSpacing(0, 1.08f);
         if (bold) value.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         return value;
+    }
+
+
+    private EditText textInput(String value, String hint, boolean singleLine) {
+        EditText input = new EditText(this);
+        input.setText(value);
+        input.setHint(hint);
+        input.setTextColor(RIVER_DARK);
+        input.setHintTextColor(Color.GRAY);
+        input.setSingleLine(singleLine);
+        input.setMinLines(singleLine ? 1 : 3);
+        input.setMaxLines(singleLine ? 1 : 5);
+        input.setGravity(singleLine ? Gravity.CENTER_VERTICAL : Gravity.TOP);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT |
+                (singleLine ? android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES : android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE | android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES));
+        input.setBackground(rounded(Color.rgb(248, 252, 253), dp(10), Color.rgb(204, 225, 231)));
+        input.setPadding(dp(12), dp(11), dp(12), dp(11));
+        return input;
     }
 
     private EditText input(String value, String hint) {

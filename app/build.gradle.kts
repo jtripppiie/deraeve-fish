@@ -10,8 +10,8 @@ android {
         applicationId = "com.tripperdee.deraevfish"
         minSdk = 33
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0-polished-test"
+        versionCode = 3
+        versionName = "0.3.0-secret-alerts"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
