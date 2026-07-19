@@ -124,7 +124,7 @@ public class MainActivity extends Activity {
 
         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            hero.setPadding(dp(20), bars.top + dp(14), dp(20), dp(22));
+            hero.setPadding(dp(20), bars.top + dp(20), dp(20), dp(22));
             root.setPadding(0, 0, 0, bars.bottom + dp(12));
             return insets;
         });
@@ -175,6 +175,7 @@ public class MainActivity extends Activity {
         setContentView(scroll);
         loadCached();
         handleDeepLink(getIntent());
+        autoCheck();
     }
 
     private LinearLayout buildHero() {
@@ -186,14 +187,16 @@ public class MainActivity extends Activity {
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         HeatSalmonView mini = new HeatSalmonView(this);
-        top.addView(mini, new LinearLayout.LayoutParams(dp(92), dp(68)));
+        top.addView(mini, new LinearLayout.LayoutParams(dp(76), dp(56)));
 
         LinearLayout words = new LinearLayout(this);
         words.setOrientation(LinearLayout.VERTICAL);
-        words.addView(text("DeRaeve Fish Count", 27, Color.WHITE, true));
-        words.addView(text("Secret fishing intelligence", 14, Color.rgb(203, 232, 240), false));
+        TextView heroTitle = text("DeRaeve Fish Count", 22, Color.WHITE, true);
+        heroTitle.setMaxLines(2);
+        words.addView(heroTitle);
+        words.addView(text("Secret fishing intelligence", 14, Color.rgb(203, 232, 240), false), matchWrap(0, 2, 0, 0));
         LinearLayout.LayoutParams wordParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
-        wordParams.setMargins(dp(4), 0, dp(8), 0);
+        wordParams.setMargins(dp(10), 0, dp(8), 0);
         top.addView(words, wordParams);
 
         TextView settings = text("SETTINGS", 12, RIVER_DARK, true);
@@ -242,12 +245,24 @@ public class MainActivity extends Activity {
     }
 
     private void manualRefresh() {
-        setBusy(true, "Checking the official source…");
+        runSync(true);
+    }
+
+    // Runs once when the home screen opens so cached data is refreshed against
+    // the official source without the user tapping the button. Uses the
+    // non-forced path so the repository's source-friendly minimum interval and
+    // circuit breaker still apply.
+    private void autoCheck() {
+        runSync(false);
+    }
+
+    private void runSync(boolean force) {
+        setBusy(true, force ? "Checking the official source…" : "Auto-checking for new counts…");
         executor.execute(() -> {
             FishRepository repository = new FishRepository(this);
             List<FishRepository.SyncResult> results = new ArrayList<>();
             for (FishRepository.Project project : repository.followedProjects()) {
-                results.add(repository.syncProject(project, true));
+                results.add(repository.syncProject(project, force));
             }
             NotificationHelper.dispatch(this, results);
             runOnUiThread(() -> {
@@ -404,8 +419,8 @@ public class MainActivity extends Activity {
 
         LinearLayout rangeRow = new LinearLayout(this);
         rangeRow.setPadding(0, dp(8), 0, 0);
-        int[] days = {7, 14, 30, 0};
-        String[] labels = {"7D", "14D", "30D", "SEASON"};
+        int[] days = {7, 14, 0};
+        String[] labels = {"7D", "14D", "SEASON"};
         List<TextView> buttons = new ArrayList<>();
         for (int i = 0; i < labels.length; i++) {
             TextView button = chartChip(labels[i], i == 1);
