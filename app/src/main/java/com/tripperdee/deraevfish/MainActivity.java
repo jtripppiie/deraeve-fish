@@ -88,14 +88,21 @@ public class MainActivity extends Activity {
         LinearLayout center = new LinearLayout(this);
         center.setOrientation(LinearLayout.VERTICAL);
         center.setGravity(Gravity.CENTER);
+        // Horizontal padding keeps the wrapped title off the screen edges.
+        center.setPadding(dp(32), dp(24), dp(32), dp(24));
         HeatSalmonView icon = new HeatSalmonView(this);
-        center.addView(icon, new LinearLayout.LayoutParams(dp(190), dp(138)));
-        TextView title = text("The DeRaeve super special\nsecret fishing app", 28, Color.WHITE, true);
+        center.addView(icon, new LinearLayout.LayoutParams(dp(158), dp(116)));
+        TextView title = text("The DeRaeve super special\nsecret fishing app", 27, Color.WHITE, true);
         title.setGravity(Gravity.CENTER);
-        center.addView(title, matchWrap(0, 16, 0, 0));
+        title.setLineSpacing(dp(2), 1.05f);
+        center.addView(title, matchWrap(0, 22, 0, 0));
         TextView sub = text("Unofficial fish-count intelligence", 15, Color.rgb(202, 232, 240), false);
+        sub.setGravity(Gravity.CENTER);
         center.addView(sub, matchWrap(0, 12, 0, 0));
-        splash.addView(center, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        FrameLayout.LayoutParams centerParams = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+        centerParams.gravity = Gravity.CENTER;
+        splash.addView(center, centerParams);
         setContentView(splash);
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             buildMainScreen();
@@ -132,8 +139,8 @@ public class MainActivity extends Activity {
 
         LinearLayout disclaimer = new LinearLayout(this);
         disclaimer.setOrientation(LinearLayout.HORIZONTAL);
-        disclaimer.setGravity(Gravity.TOP);
-        disclaimer.setPadding(dp(14), dp(13), dp(14), dp(13));
+        disclaimer.setGravity(Gravity.CENTER_VERTICAL);
+        disclaimer.setPadding(dp(14), dp(14), dp(14), dp(14));
         disclaimer.setBackground(rounded(Color.WHITE, dp(16), BORDER));
         disclaimer.setElevation(dp(1));
         TextView info = text("i", 14, Color.WHITE, true);
@@ -141,6 +148,9 @@ public class MainActivity extends Activity {
         info.setBackground(rounded(RIVER_BLUE, dp(18), RIVER_BLUE));
         disclaimer.addView(info, new LinearLayout.LayoutParams(dp(28), dp(28)));
         TextView disclaimerText = text("Unofficial client using public Alaska Department of Fish and Game counts. Passage counts are useful context, not a guarantee of fishing conditions or a catch.", 13, Color.DKGRAY, false);
+        // Extra bottom padding avoids the last wrapped line being clipped by the
+        // line-spacing multiplier applied in text().
+        disclaimerText.setPadding(0, 0, 0, dp(2));
         LinearLayout.LayoutParams disclaimerTextParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         disclaimerTextParams.setMargins(dp(10), 0, 0, 0);
         disclaimer.addView(disclaimerText, disclaimerTextParams);
