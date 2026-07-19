@@ -9,5 +9,11 @@
         <item name="android:windowLightNavigationBar">false</item>
         <item name="android:windowActionModeOverlay">true</item>
         <item name="android:windowNoTitle">true</item>
+        <!-- Dark window + Android 12+ system splash so the launch/loading screen
+             matches the app's dark river background (no white flash) and shows
+             the salmon icon while the activity starts. -->
+        <item name="android:windowBackground">@color/river_dark</item>
+        <item name="android:windowSplashScreenBackground">@color/river_dark</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
     </style>
 </resources>
