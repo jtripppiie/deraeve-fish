@@ -20,6 +20,7 @@ import androidx.core.content.ContextCompat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -58,11 +59,22 @@ public final class NotificationHelper {
         }
 
         ZonedDateTime now = ZonedDateTime.now(ALASKA);
-        if (FishLogic.isQuietHour(now.getHour(), prefs.getInt("quiet_start", 22), prefs.getInt("quiet_end", 7))) {
+        int quietStart = prefs.getInt("quiet_start", 22);
+        int quietEnd = prefs.getInt("quiet_end", 7);
+        List<AppDatabase.Announcement> pending = dao.pendingAnnouncements();
+        if (FishLogic.isQuietHour(now.getHour(), quietStart, quietEnd)) {
+            // Hold during quiet hours, but if there is something waiting, schedule a
+            // catch-up check for right after quiet hours end so the alert is not
+            // delayed until the next routine background window.
+            if (!pending.isEmpty()) {
+                ZonedDateTime end = now.withHour(quietEnd % 24).withMinute(0).withSecond(0).withNano(0);
+                if (!end.isAfter(now)) end = end.plusDays(1);
+                long delayMs = Duration.between(now, end).toMillis() + 60_000L;
+                FishSyncWorker.scheduleQuietHourCatchUp(context, delayMs);
+            }
             return;
         }
 
-        List<AppDatabase.Announcement> pending = dao.pendingAnnouncements();
         if (pending.isEmpty()) return;
         long thresholdFish = prefs.getLong("threshold_fish", 1000L);
         double thresholdPercent = Double.longBitsToDouble(

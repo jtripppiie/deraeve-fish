@@ -7,8 +7,10 @@ import androidx.annotation.NonNull;
 import androidx.work.BackoffPolicy;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.ExistingWorkPolicy;
 import androidx.work.ListenableWorker;
 import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.Worker;
@@ -22,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 
 public class FishSyncWorker extends Worker {
     public static final String UNIQUE_WORK = "deraev-fish-periodic-sync";
+    public static final String QUIET_CATCHUP_WORK = "deraev-fish-quiet-catchup";
 
     public FishSyncWorker(@NonNull Context appContext, @NonNull WorkerParameters params) {
         super(appContext, params);
@@ -66,5 +69,21 @@ public class FishSyncWorker extends Worker {
                 .addTag("fish-count-sync")
                 .build();
         manager.enqueueUniquePeriodicWork(UNIQUE_WORK, ExistingPeriodicWorkPolicy.UPDATE, request);
+    }
+
+    // Schedules a single check to run shortly after quiet hours end so counts
+    // discovered during quiet hours are delivered promptly instead of waiting
+    // for the next routine periodic window.
+    public static void scheduleQuietHourCatchUp(Context context, long delayMs) {
+        Constraints constraints = new Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build();
+        OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(FishSyncWorker.class)
+                .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
+                .setConstraints(constraints)
+                .addTag("fish-count-quiet-catchup")
+                .build();
+        WorkManager.getInstance(context)
+                .enqueueUniqueWork(QUIET_CATCHUP_WORK, ExistingWorkPolicy.REPLACE, request);
     }
 }
