@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - '.github/workflows/bootstrap-source.yml'
+  pull_request:
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -14,8 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Check out repository
+      - name: Check out main branch
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Download and verify the previously tested source package
         shell: bash
