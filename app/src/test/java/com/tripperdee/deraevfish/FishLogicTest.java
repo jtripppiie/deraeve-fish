@@ -88,11 +88,4 @@ public class FishLogicTest {
         assertTrue(body.contains("18,000"));
         assertTrue(body.contains("+12.7%"));
     }
-
-    @Test public void notificationRequiresCommittedAnnouncement() {
-        boolean committed = false;
-        assertFalse(committed && true);
-        committed = true;
-        assertTrue(committed && true);
-    }
 }

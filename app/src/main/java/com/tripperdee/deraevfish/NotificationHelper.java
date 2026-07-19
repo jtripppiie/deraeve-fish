@@ -135,9 +135,11 @@ public final class NotificationHelper {
 
     private static void notifySingle(Context context, AppDatabase.Announcement announcement) {
         FishRepository.Project project = project(announcement.projectId);
+        // Use the actual followed project name so non-Kenai projects (Kasilof, Russian River)
+        // are announced correctly instead of always saying "Kenai".
         String title = announcement.type.equals(FishLogic.ChangeType.REVISED_REPORT.name())
                 ? "🐟 Count correction: " + project.name
-                : "🐟 New Kenai Fish Count!";
+                : "🐟 New count: " + project.name;
         String body = body(project, announcement);
         NotificationCompat.Builder builder = base(context)
                 .setContentTitle(title)

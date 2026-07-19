@@ -44,6 +44,10 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "fish-count.db"
                             )
+                            // The cache is a disposable mirror of a public source; if a future
+                            // schema bump ships without an explicit Migration, rebuild the cache
+                            // instead of crashing on upgrade. The next sync repopulates it.
+                            .fallbackToDestructiveMigration(true)
                             .build();
                     INSTANCE = current;
                 }

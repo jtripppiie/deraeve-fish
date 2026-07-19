@@ -380,7 +380,12 @@ public class FishRepository {
         for (AppDatabase.CountRecord record : records) {
             if (!seen.add(record.projectId + "|" + record.reportDate)) continue;
             if (record.year == currentYear && record.cumulativeCount < 0) throw new ParseFailure("Negative cumulative value");
-            priorCumulative = Math.max(priorCumulative, record.cumulativeCount);
+            // Records are sorted ascending by report date, so a within-year cumulative total
+            // that drops sharply signals a mis-parsed payload rather than real fish passage.
+            if (record.year == currentYear && priorCumulative >= 0 && record.cumulativeCount < priorCumulative) {
+                throw new ParseFailure("Cumulative count decreased between reporting dates");
+            }
+            if (record.year == currentYear) priorCumulative = record.cumulativeCount;
         }
         AppDatabase.CountRecord latest = records.get(records.size() - 1);
         LocalDate latestDate = LocalDate.parse(latest.reportDate);
