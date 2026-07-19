@@ -1,0 +1,261 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "89ecf994a7aecd38ce9d4f8c85af31a7",
+    "entities": [
+      {
+        "tableName": "count_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`project_id` TEXT NOT NULL, `report_date` TEXT NOT NULL, `year` INTEGER NOT NULL, `daily_count` INTEGER NOT NULL, `cumulative_count` INTEGER NOT NULL, `notes` TEXT, `status` TEXT, `official_update_time` TEXT, `retrieved_at` INTEGER NOT NULL, `fingerprint` TEXT, PRIMARY KEY(`project_id`, `report_date`))",
+        "fields": [
+          {
+            "fieldPath": "projectId",
+            "columnName": "project_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportDate",
+            "columnName": "report_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "year",
+            "columnName": "year",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dailyCount",
+            "columnName": "daily_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cumulativeCount",
+            "columnName": "cumulative_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "officialUpdateTime",
+            "columnName": "official_update_time",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "retrievedAt",
+            "columnName": "retrieved_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fingerprint",
+            "columnName": "fingerprint",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "project_id",
+            "report_date"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_count_records_project_id_year",
+            "unique": false,
+            "columnNames": [
+              "project_id",
+              "year"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_count_records_project_id_year` ON `${TABLE_NAME}` (`project_id`, `year`)"
+          }
+        ]
+      },
+      {
+        "tableName": "sync_state",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`project_id` TEXT NOT NULL, `etag` TEXT, `last_modified` TEXT, `last_attempt` INTEGER NOT NULL, `last_success` INTEGER NOT NULL, `last_detected_update` INTEGER NOT NULL, `failure_count` INTEGER NOT NULL, `breaker_until` INTEGER NOT NULL, `last_error` TEXT, `latest_fingerprint` TEXT, PRIMARY KEY(`project_id`))",
+        "fields": [
+          {
+            "fieldPath": "projectId",
+            "columnName": "project_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "etag",
+            "columnName": "etag",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastModified",
+            "columnName": "last_modified",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "lastAttempt",
+            "columnName": "last_attempt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastSuccess",
+            "columnName": "last_success",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastDetectedUpdate",
+            "columnName": "last_detected_update",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "failureCount",
+            "columnName": "failure_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "breakerUntil",
+            "columnName": "breaker_until",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "last_error",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "latestFingerprint",
+            "columnName": "latest_fingerprint",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "project_id"
+          ]
+        }
+      },
+      {
+        "tableName": "announcements",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `announcement_key` TEXT NOT NULL, `project_id` TEXT NOT NULL, `type` TEXT NOT NULL, `report_date` TEXT NOT NULL, `daily_count` INTEGER NOT NULL, `cumulative_count` INTEGER NOT NULL, `previous_daily` INTEGER NOT NULL, `previous_cumulative` INTEGER NOT NULL, `yoy_percent` REAL, `five_year_average` REAL, `delivery_state` TEXT NOT NULL, `created_at` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "announcementKey",
+            "columnName": "announcement_key",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "projectId",
+            "columnName": "project_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reportDate",
+            "columnName": "report_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dailyCount",
+            "columnName": "daily_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cumulativeCount",
+            "columnName": "cumulative_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "previousDaily",
+            "columnName": "previous_daily",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "previousCumulative",
+            "columnName": "previous_cumulative",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "yoyPercent",
+            "columnName": "yoy_percent",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "fiveYearAverage",
+            "columnName": "five_year_average",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "deliveryState",
+            "columnName": "delivery_state",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_announcements_announcement_key",
+            "unique": true,
+            "columnNames": [
+              "announcement_key"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_announcements_announcement_key` ON `${TABLE_NAME}` (`announcement_key`)"
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '89ecf994a7aecd38ce9d4f8c85af31a7')"
+    ]
+  }
+}
