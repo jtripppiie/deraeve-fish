@@ -107,7 +107,7 @@ public class MainActivity extends Activity {
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             buildMainScreen();
             maybeExplainNotifications();
-        }, 900);
+        }, 2200);
     }
 
     private void buildMainScreen() {
