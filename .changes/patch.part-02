@@ -1,0 +1,92 @@
+      FishApplication.createChannels(context);
++        String safeTitle = title == null || title.isBlank() ? "Fish alert" : title.trim();
++        String safeBody = body == null || body.isBlank() ? "This is a simulated DeRaeve notification." : body.trim();
++        int id = 8800 + (int) (System.currentTimeMillis() % 700);
++        NotificationCompat.Builder builder = base(context)
++                .setOnlyAlertOnce(false)
++                .setContentTitle("🧪 TEST • " + safeTitle)
++                .setContentText(safeBody)
++                .setStyle(new NotificationCompat.BigTextStyle().bigText(safeBody))
++                .setContentIntent(testOpenIntent(context, "kenai-sockeye-late", "custom", id));
++        context.getSystemService(NotificationManager.class).notify(id, builder.build());
++    }
++
+     private static void notifySingle(Context context, AppDatabase.Announcement announcement) {
+         FishRepository.Project project = project(announcement.projectId);
+         String title = announcement.type.equals(FishLogic.ChangeType.REVISED_REPORT.name())
+diff --git a/app/src/main/java/com/tripperdee/deraevfish/SettingsActivity.java b/app/src/main/java/com/tripperdee/deraevfish/SettingsActivity.java
+index 3155922..8506932 100644
+--- a/app/src/main/java/com/tripperdee/deraevfish/SettingsActivity.java
++++ b/app/src/main/java/com/tripperdee/deraevfish/SettingsActivity.java
+@@ -59,10 +59,13 @@ public class SettingsActivity extends Activity {
+     private RadioGroup modes;
+     private EditText thresholdFish;
+     private EditText thresholdPercent;
++    private EditText fakeAlertTitle;
++    private EditText fakeAlertBody;
+     private LinearLayout rootLayout;
+     private LinearLayout debugPanel;
+     private TextView syncInfo;
+     private NotificationHelper.TestType pendingTest;
++    private boolean pendingCustomTest;
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -117,7 +120,7 @@ public class SettingsActivity extends Activity {
+ 
+         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, insets) -> {
+             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+-            hero.setPadding(dp(20), bars.top + dp(14), dp(20), dp(21));
++            hero.setPadding(dp(20), bars.top + dp(24), dp(20), dp(24));
+             root.setPadding(0, 0, 0, bars.bottom + dp(14));
+             return insets;
+         });
+@@ -207,24 +210,37 @@ public class SettingsActivity extends Activity {
+         diagnostics.addView(androidSettings);
+         content.addView(diagnostics, margin(0, 0, 0, 14));
+ 
+-        LinearLayout developer = card("Developer / test mode", "Test notifications are clearly marked and use the same system notification channel as real count updates.");
+-        debugMode = toggle("Enable test tools", prefs.getBoolean("debug_mode", false));
+-        developer.addView(debugMode);
+-        debugPanel = new LinearLayout(this);
+-        debugPanel.setOrientation(LinearLayout.VERTICAL);
+-        TextView testUpdate = testButton("SEND TEST NEW-COUNT NOTIFICATION");
+-        testUpdate.setOnClickListener(view -> sendTest(NotificationHelper.TestType.NEW_COUNT));
+-        debugPanel.addView(testUpdate, margin(0, 8, 0, 0));
+-        TextView testRevision = secondaryButton("SEND TEST REVISION NOTIFICATION");
+-        testRevision.setOnClickListener(view -> sendTest(NotificationHelper.TestType.REVISION));
+-        debugPanel.addView(testRevision, margin(0, 8, 0, 0));
+-        TextView testGroup = secondaryButton("SEND TEST GROUPED UPDATES");
+-        testGroup.setOnClickListener(view -> sendTest(NotificationHelper.TestType.GROUPED));
+-        debugPanel.addView(testGroup, margin(0, 8, 0, 0));
+-        debugPanel.setVisibility(debugMode.isChecked() ? View.VISIBLE : View.GONE);
+-        developer.addView(debugPanel);
+-        debugMode.setOnCheckedChangeListener((buttonView, isChecked) -> debugPanel.setVisibility(isChecked ? View.VISIBLE : View.GONE));
+-        content.addView(developer, margin(0, 0, 0, 16));
++        if (prefs.getBoolean("developer_unlocked", false)) {
++            LinearLayout developer = card("Secret test alerts", "Unlocked by triple-tapping the fish. These alerts are clearly marked as tests and appear in the normal Android notification shade.");
++            debugMode = toggle("Enable test tools", prefs.getBoolean("debug_mode", true));
++            developer.addView(debugMode);
++            debugPanel = new LinearLayout(this);
++            debugPanel.setOrientation(LinearLayout.VERTICAL);
++
++            debugPanel.addView(fieldLabel("Custom alert title"));
++            fakeAlertTitle = textInput("Big Kenai push detected", "Alert title", true);
++            debugPanel.addView(fakeAlertTitle);
++            debugPanel.addView(fieldLabel("Custom alert message"));
++            fakeAlertBody = textInput("Fish are moving. Check the newest Kenai count before heading out.", "Alert message", false);
++            debugPanel.addView(fakeAlertBody);
++            TextView customAlert = testButton("SEND CUSTOM FAKE ALERT");
++            customAlert.setOnClickListener(view -> sendCustomTest());
++            debugPanel.addView(customAlert, margin(0, 10, 0, 0));
++
++            TextView testUpdate = secondaryButton("SEND TEST NEW-COUNT NOTIFICATION");
++            testUpdate.setOnClickListener(view -> sendTest(NotificationHelper.TestType.NEW_COUNT));
++            debugPanel.addView(testUpdate, margin(0, 8, 0, 0));
++            TextView testRevision = secondaryButton("SEND TEST REVISION NOTIFICATION");
++            testRevision.setOnClickListener(view -> sendTest(NotificationHelper.TestType.REVISION));
++            debugPanel.addView(testRevision, margin(0, 8, 0, 0));
++            TextView testGroup = secondaryButton("SEND TEST GROUPED UPDATES");
++            testGroup.setOnClickListener(view -> sendTest(NotificationHelper.TestType.GROUPED));
++            debugPanel.addView(testGroup, margin(0, 8, 0, 0));
++            debugPanel.setVisibili
