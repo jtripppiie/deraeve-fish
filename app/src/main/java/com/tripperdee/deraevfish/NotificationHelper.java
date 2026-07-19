@@ -133,6 +133,23 @@ public final class NotificationHelper {
         manager.notify(id, builder.build());
     }
 
+
+    public static void sendCustomTestNotification(Context context, String title, String body) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) return;
+         FishApplication.createChannels(context);
+        String safeTitle = title == null || title.isBlank() ? "Fish alert" : title.trim();
+        String safeBody = body == null || body.isBlank() ? "This is a simulated DeRaeve notification." : body.trim();
+        int id = 8800 + (int) (System.currentTimeMillis() % 700);
+        NotificationCompat.Builder builder = base(context)
+                .setOnlyAlertOnce(false)
+                .setContentTitle("🧪 TEST • " + safeTitle)
+                .setContentText(safeBody)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(safeBody))
+                .setContentIntent(testOpenIntent(context, "kenai-sockeye-late", "custom", id));
+        context.getSystemService(NotificationManager.class).notify(id, builder.build());
+    }
+
     private static void notifySingle(Context context, AppDatabase.Announcement announcement) {
         FishRepository.Project project = project(announcement.projectId);
         String title = announcement.type.equals(FishLogic.ChangeType.REVISED_REPORT.name())

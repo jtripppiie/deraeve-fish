@@ -61,6 +61,7 @@ public class MainActivity extends Activity {
     private static final int SOFT_BLUE = Color.rgb(225, 241, 246);
     private static final int BORDER = Color.rgb(194, 218, 225);
     private static final ZoneId ALASKA = ZoneId.of("America/Anchorage");
+    private static final long SPLASH_DURATION_MS = 2600L;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinearLayout projectContainer;
@@ -68,6 +69,8 @@ public class MainActivity extends Activity {
     private ProgressBar progress;
     private TextView checkButton;
     private SharedPreferences prefs;
+    private int fishTapCount;
+    private long lastFishTapAt;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,23 +87,64 @@ public class MainActivity extends Activity {
 
     private void showSplash() {
         FrameLayout splash = new FrameLayout(this);
-        splash.setBackground(gradient(RIVER_DARK, Color.rgb(9, 78, 101), GradientDrawable.Orientation.TL_BR, 0));
+        splash.setBackground(gradient(RIVER_DARK, Color.rgb(9, 86, 111), GradientDrawable.Orientation.TL_BR, 0));
+
         LinearLayout center = new LinearLayout(this);
         center.setOrientation(LinearLayout.VERTICAL);
         center.setGravity(Gravity.CENTER);
+        center.setPadding(dp(28), dp(72), dp(28), dp(64));
+        center.setAlpha(0f);
+        center.setTranslationY(dp(18));
+
+        FrameLayout iconStage = new FrameLayout(this);
+        View halo = new View(this);
+        halo.setBackground(rounded(Color.argb(34, 255, 255, 255), dp(100), Color.argb(70, 255, 255, 255)));
+        FrameLayout.LayoutParams haloParams = new FrameLayout.LayoutParams(dp(184), dp(184), Gravity.CENTER);
+        iconStage.addView(halo, haloParams);
+
         HeatSalmonView icon = new HeatSalmonView(this);
-        center.addView(icon, new LinearLayout.LayoutParams(dp(190), dp(138)));
-        TextView title = text("The DeRaeve super special\nsecret fishing app", 28, Color.WHITE, true);
+        icon.setScaleX(0.82f);
+        icon.setScaleY(0.82f);
+        FrameLayout.LayoutParams iconParams = new FrameLayout.LayoutParams(dp(210), dp(150), Gravity.CENTER);
+        iconStage.addView(icon, iconParams);
+        center.addView(iconStage, new LinearLayout.LayoutParams(dp(230), dp(194)));
+
+        TextView title = text("DeRaeve Fish Count", 32, Color.WHITE, true);
         title.setGravity(Gravity.CENTER);
-        center.addView(title, matchWrap(0, 16, 0, 0));
-        TextView sub = text("Unofficial fish-count intelligence", 15, Color.rgb(202, 232, 240), false);
-        center.addView(sub, matchWrap(0, 12, 0, 0));
+        center.addView(title, matchWrap(0, 18, 0, 0));
+
+        TextView sub = text("Secret fishing intelligence", 17, Color.rgb(211, 239, 246), false);
+        sub.setGravity(Gravity.CENTER);
+        center.addView(sub, matchWrap(0, 8, 0, 0));
+
+        TextView preparing = text("Preparing Alaska river counts…", 13, Color.WHITE, true);
+        preparing.setGravity(Gravity.CENTER);
+        preparing.setPadding(dp(14), dp(8), dp(14), dp(8));
+        preparing.setBackground(rounded(Color.argb(45, 255, 255, 255), dp(22), Color.argb(80, 255, 255, 255)));
+        center.addView(preparing, wrap(0, 26, 0, 0));
+
+        ProgressBar spinner = new ProgressBar(this, null, android.R.attr.progressBarStyleSmall);
+        LinearLayout.LayoutParams spinnerParams = new LinearLayout.LayoutParams(dp(30), dp(30));
+        spinnerParams.setMargins(0, dp(18), 0, 0);
+        center.addView(spinner, spinnerParams);
+
+        TextView footer = text("Official public count data • Alaska time", 12, Color.rgb(177, 218, 229), false);
+        footer.setGravity(Gravity.CENTER);
+        center.addView(footer, matchWrap(0, 22, 0, 0));
+
         splash.addView(center, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         setContentView(splash);
+
+        center.animate().alpha(1f).translationY(0f).setDuration(520).start();
+        icon.animate().scaleX(1f).scaleY(1f).setDuration(850).start();
+        halo.animate().scaleX(1.08f).scaleY(1.08f).alpha(0.72f).setDuration(1250).start();
+
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            buildMainScreen();
-            maybeExplainNotifications();
-        }, 900);
+            splash.animate().alpha(0f).setDuration(220).withEndAction(() -> {
+                buildMainScreen();
+                maybeExplainNotifications();
+            }).start();
+        }, SPLASH_DURATION_MS);
     }
 
     private void buildMainScreen() {
@@ -124,7 +168,7 @@ public class MainActivity extends Activity {
 
         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, insets) -> {
             Insets bars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            hero.setPadding(dp(20), bars.top + dp(14), dp(20), dp(22));
+            hero.setPadding(dp(20), bars.top + dp(26), dp(20), dp(26));
             root.setPadding(0, 0, 0, bars.bottom + dp(12));
             return insets;
         });
@@ -180,12 +224,16 @@ public class MainActivity extends Activity {
     private LinearLayout buildHero() {
         LinearLayout hero = new LinearLayout(this);
         hero.setOrientation(LinearLayout.VERTICAL);
-        hero.setPadding(dp(20), dp(22), dp(20), dp(22));
+        hero.setPadding(dp(20), dp(30), dp(20), dp(26));
         hero.setBackground(gradient(RIVER_DARK, Color.rgb(9, 83, 107), GradientDrawable.Orientation.TL_BR, 0));
 
         LinearLayout top = new LinearLayout(this);
         top.setGravity(Gravity.CENTER_VERTICAL);
         HeatSalmonView mini = new HeatSalmonView(this);
+        mini.setClickable(true);
+        mini.setFocusable(true);
+        mini.setContentDescription("DeRaeve fish logo. Triple tap to unlock secret test alerts.");
+        mini.setOnClickListener(v -> handleSecretFishTap());
         top.addView(mini, new LinearLayout.LayoutParams(dp(92), dp(68)));
 
         LinearLayout words = new LinearLayout(this);
@@ -212,6 +260,23 @@ public class MainActivity extends Activity {
         chips.addView(heroChip("6-HOUR SMART SYNC"), marginStart(dp(8)));
         hero.addView(chips, matchWrap(0, 13, 0, 0));
         return hero;
+    }
+
+
+    private void handleSecretFishTap() {
+        long now = System.currentTimeMillis();
+        if (now - lastFishTapAt > 1200L) fishTapCount = 0;
+        lastFishTapAt = now;
+        fishTapCount++;
+        if (fishTapCount < 3) return;
+
+        fishTapCount = 0;
+        prefs.edit()
+                .putBoolean("developer_unlocked", true)
+                .putBoolean("debug_mode", true)
+                .apply();
+        Toast.makeText(this, "Secret test alerts unlocked", Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this, SettingsActivity.class));
     }
 
     private TextView heroChip(String value) {
@@ -404,8 +469,8 @@ public class MainActivity extends Activity {
 
         LinearLayout rangeRow = new LinearLayout(this);
         rangeRow.setPadding(0, dp(8), 0, 0);
-        int[] days = {7, 14, 30, 0};
-        String[] labels = {"7D", "14D", "30D", "SEASON"};
+        int[] days = {7, 14, 0};
+        String[] labels = {"7D", "14D", "SEASON"};
         List<TextView> buttons = new ArrayList<>();
         for (int i = 0; i < labels.length; i++) {
             TextView button = chartChip(labels[i], i == 1);
