@@ -388,7 +388,9 @@ public class MainActivity extends Activity {
         cells.setOrientation(LinearLayout.HORIZONTAL);
         long max = 1;
         for (AppDatabase.CountRecord record : snapshot.recent) max = Math.max(max, record.dailyCount);
-        for (int i = snapshot.recent.size() - 1; i >= 0; i--) {
+        // snapshot.recent is newest-first, so iterate ascending to place the latest
+        // date on the left; older dates are reached by scrolling right.
+        for (int i = 0; i < snapshot.recent.size(); i++) {
             AppDatabase.CountRecord record = snapshot.recent.get(i);
             float intensity = Math.max(0.10f, record.dailyCount / (float) max);
             TextView cell = heatCell(record, intensity);
