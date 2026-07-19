@@ -126,7 +126,7 @@ public class MainActivity extends Activity {
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(18), dp(20), dp(28));
+        content.setPadding(dp(20), dp(14), dp(20), dp(18));
         root.addView(content);
 
         ViewCompat.setOnApplyWindowInsetsListener(scroll, (view, insets) -> {
@@ -154,7 +154,7 @@ public class MainActivity extends Activity {
         LinearLayout.LayoutParams disclaimerTextParams = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         disclaimerTextParams.setMargins(dp(10), 0, 0, 0);
         disclaimer.addView(disclaimerText, disclaimerTextParams);
-        content.addView(disclaimer, matchWrap(0, 0, 0, 14));
+        content.addView(disclaimer, matchWrap(0, 0, 0, 10));
 
         checkButton = actionButton("CHECK FOR NEW COUNTS", SALMON, Color.WHITE);
         checkButton.setOnClickListener(v -> manualRefresh());
@@ -168,7 +168,7 @@ public class MainActivity extends Activity {
         syncStatus = text("Loading saved counts…", 13, Color.DKGRAY, false);
         syncStatus.setPadding(dp(14), dp(11), dp(14), dp(11));
         syncStatus.setBackground(rounded(SOFT_BLUE, dp(13), Color.rgb(205, 229, 236)));
-        content.addView(syncStatus, matchWrap(0, 8, 0, 16));
+        content.addView(syncStatus, matchWrap(0, 6, 0, 10));
 
         projectContainer = new LinearLayout(this);
         projectContainer.setOrientation(LinearLayout.VERTICAL);
@@ -315,7 +315,7 @@ public class MainActivity extends Activity {
         long latestCheck = 0;
         long latestUpdate = 0;
         for (ProjectSnapshot snapshot : snapshots) {
-            projectContainer.addView(projectCard(snapshot), matchWrap(0, 0, 0, 16));
+            projectContainer.addView(projectCard(snapshot), matchWrap(0, 0, 0, 11));
             if (snapshot.state != null) {
                 latestCheck = Math.max(latestCheck, snapshot.state.lastAttempt);
                 latestUpdate = Math.max(latestUpdate, snapshot.state.lastDetectedUpdate);
@@ -330,7 +330,7 @@ public class MainActivity extends Activity {
     private View projectCard(ProjectSnapshot snapshot) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(17), dp(17), dp(17), dp(18));
+        card.setPadding(dp(16), dp(15), dp(16), dp(15));
         card.setBackground(rounded(Color.WHITE, dp(20), BORDER));
         card.setElevation(dp(2));
         card.setTag(snapshot.project.id);
@@ -354,7 +354,7 @@ public class MainActivity extends Activity {
         }
 
         TextView daily = text(FishLogic.formatNumber(snapshot.latest.dailyCount), 35, SALMON, true);
-        card.addView(daily, matchWrap(0, 14, 0, 0));
+        card.addView(daily, matchWrap(0, 10, 0, 0));
         card.addView(text("daily passage • " + displayDate(snapshot.latest.reportDate), 13, Color.DKGRAY, false));
 
         LinearLayout metrics = new LinearLayout(this);
@@ -363,11 +363,11 @@ public class MainActivity extends Activity {
         AppDatabase.CountRecord prior = sameMonthDay(snapshot.previousYear, snapshot.latest.reportDate.substring(5));
         String comparison = prior == null ? "No match" : signedPercent(FishLogic.percentChange(snapshot.latest.cumulativeCount, prior.cumulativeCount));
         metrics.addView(metricBox("VS LAST YEAR", comparison, comparison.startsWith("-") ? Color.rgb(164, 74, 57) : RIVER_BLUE), weighted(1, 5, 0, 0, 0));
-        card.addView(metrics, matchWrap(0, 13, 0, 0));
+        card.addView(metrics, matchWrap(0, 11, 0, 0));
 
         String momentum = momentum(snapshot.currentYear);
         TextView trend = smallChip(momentum, SOFT_BLUE, RIVER_DARK);
-        card.addView(trend, wrap(0, 10, 0, 0));
+        card.addView(trend, wrap(0, 8, 0, 0));
 
         if (snapshot.state != null && snapshot.state.lastError != null && !snapshot.state.lastError.isBlank()) {
             TextView warning = text("Sync note: " + snapshot.state.lastError, 12, Color.rgb(154, 71, 0), false);
@@ -380,7 +380,7 @@ public class MainActivity extends Activity {
         heatHeader.setGravity(Gravity.CENTER_VERTICAL);
         heatHeader.addView(text("Recent activity", 15, RIVER_DARK, true), new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
         heatHeader.addView(text("Swipe for more days", 11, Color.GRAY, false));
-        card.addView(heatHeader, matchWrap(0, 16, 0, 7));
+        card.addView(heatHeader, matchWrap(0, 12, 0, 6));
 
         HorizontalScrollView horizontal = new HorizontalScrollView(this);
         horizontal.setHorizontalScrollBarEnabled(false);
@@ -392,17 +392,17 @@ public class MainActivity extends Activity {
             AppDatabase.CountRecord record = snapshot.recent.get(i);
             float intensity = Math.max(0.10f, record.dailyCount / (float) max);
             TextView cell = heatCell(record, intensity);
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(76), dp(68));
+            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(dp(76), dp(60));
             params.setMargins(0, 0, dp(7), 0);
             cells.addView(cell, params);
         }
         horizontal.addView(cells);
         card.addView(horizontal);
 
-        card.addView(text("Count trend", 15, RIVER_DARK, true), matchWrap(0, 17, 0, 8));
+        card.addView(text("Count trend", 15, RIVER_DARK, true), matchWrap(0, 12, 0, 6));
         ChartView chart = new ChartView(this, snapshot.currentYear, snapshot.previousYear);
-        card.addView(chart, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(220)));
-        card.addView(chartControls(chart), matchWrap(0, 8, 0, 0));
+        card.addView(chart, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(184)));
+        card.addView(chartControls(chart), matchWrap(0, 6, 0, 0));
         return card;
     }
 
