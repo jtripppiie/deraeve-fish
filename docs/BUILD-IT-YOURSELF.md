@@ -1,4 +1,4 @@
-# Build It Yourself — The DeRaeve Fish Count App
+# Build It Yourself — The Salmon Tracker App
 
 A friendly, start-from-zero guide to understanding, building, and changing this app.
 Written so a curious beginner (even a kid who has never made an app before) could
@@ -121,7 +121,7 @@ unknown sources").
 ## 6. The map of the code
 
 All the important files live in
-`app/src/main/java/com/tripperdee/deraevfish/`. Here's every file and what it does,
+`app/src/main/java/com/tripperdee/salmontracker/`. Here's every file and what it does,
 in the order that makes them easiest to learn.
 
 | File | Nickname | What it does |
@@ -137,7 +137,7 @@ in the order that makes them easiest to learn.
 | `MuteReceiver.java` | The Mute Button | Handles the "mute this river" action from a notification. |
 
 Test files (they check that the code works) live in
-`app/src/test/java/com/tripperdee/deraevfish/`:
+`app/src/test/java/com/tripperdee/salmontracker/`:
 - `FishLogicTest.java` — checks the Thinker's decisions.
 - `AdfgParserTest.java` — checks that the Fetcher reads the website correctly.
 

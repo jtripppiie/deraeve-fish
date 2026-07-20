@@ -1,4 +1,4 @@
-package com.tripperdee.deraevfish;
+package com.tripperdee.salmontracker;
 
 import android.Manifest;
 import android.app.NotificationManager;
@@ -191,7 +191,7 @@ public final class NotificationHelper {
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setSubText("DeRaeve • Alaska time")
+                .setSubText("Salmon Tracker • Alaska time")
                 .setShowWhen(true)
                 .setWhen(System.currentTimeMillis());
     }
@@ -242,7 +242,7 @@ public final class NotificationHelper {
 
     private static PendingIntent muteIntent(Context context, String projectId, int requestCode) {
         Intent intent = new Intent(context, MuteReceiver.class);
-        intent.setAction("com.tripperdee.deraevfish.MUTE_PROJECT");
+        intent.setAction("com.tripperdee.salmontracker.MUTE_PROJECT");
         intent.putExtra("project_id", projectId);
         return PendingIntent.getBroadcast(context, requestCode, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -256,7 +256,7 @@ public final class NotificationHelper {
                 .setContentTitle("Fish-count source needs attention")
                 .setContentText("Repeated official-source failures were detected. Saved valid counts were preserved.")
                 .setStyle(new NotificationCompat.BigTextStyle().bigText(
-                        "Repeated official-source failures were detected. DeRaeve preserved the last valid saved count and paused this source for 24 hours to avoid misleading alerts."))
+                        "Repeated official-source failures were detected. Salmon Tracker preserved the last valid saved count and paused this source for 24 hours to avoid misleading alerts."))
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_LOW);
         context.getSystemService(NotificationManager.class).notify(9001, builder.build());

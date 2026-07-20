@@ -1,4 +1,4 @@
-package com.tripperdee.deraevfish;
+package com.tripperdee.salmontracker;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -67,7 +67,7 @@ public final class FishLogic {
     }
 
     public static String deepLink(String projectId, String reportDate, String mode) {
-        return "deraevfish://count/" + projectId + "?date=" + reportDate + "&mode=" + mode;
+        return "salmontracker://count/" + projectId + "?date=" + reportDate + "&mode=" + mode;
     }
 
     public static String summaryBody(List<AppDatabase.Announcement> announcements, FishRepository.ProjectLookup lookup) {

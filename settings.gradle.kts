@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "DeRaeveFishCount"
+rootProject.name = "SalmonTracker"
 include(":app")

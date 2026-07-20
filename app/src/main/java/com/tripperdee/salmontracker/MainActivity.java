@@ -1,4 +1,4 @@
-package com.tripperdee.deraevfish;
+package com.tripperdee.salmontracker;
 
 import android.Manifest;
 import android.animation.ValueAnimator;
@@ -92,7 +92,7 @@ public class MainActivity extends Activity {
         center.setPadding(dp(32), dp(24), dp(32), dp(24));
         HeatSalmonView icon = new HeatSalmonView(this);
         center.addView(icon, new LinearLayout.LayoutParams(dp(158), dp(116)));
-        TextView title = text("The DeRaeve super special\nsecret fishing app", 27, Color.WHITE, true);
+        TextView title = text("The super special\nsecret fishing app", 27, Color.WHITE, true);
         title.setGravity(Gravity.CENTER);
         title.setLineSpacing(dp(2), 1.05f);
         center.addView(title, matchWrap(0, 22, 0, 0));
@@ -201,7 +201,7 @@ public class MainActivity extends Activity {
 
         LinearLayout words = new LinearLayout(this);
         words.setOrientation(LinearLayout.VERTICAL);
-        TextView heroTitle = text("DeRaeve Fish Count", 22, Color.WHITE, true);
+        TextView heroTitle = text("Salmon Tracker", 22, Color.WHITE, true);
         heroTitle.setMaxLines(2);
         words.addView(heroTitle);
         words.addView(text("Secret fishing intelligence", 14, Color.rgb(203, 232, 240), false), matchWrap(0, 2, 0, 0));
@@ -283,14 +283,16 @@ public class MainActivity extends Activity {
     }
 
     private String summarize(List<FishRepository.SyncResult> results) {
-        int changed = 0, failed = 0, cached = 0;
+        int changed = 0, failed = 0, cached = 0, offline = 0;
         for (FishRepository.SyncResult result : results) {
             if (result.announcement != null) changed++;
             if (result.sourceFailure) failed++;
+            if (result.offline) offline++;
             if (result.message.contains("cached")) cached++;
         }
         if (changed > 0) return changed + " new official update" + (changed == 1 ? "" : "s") + " detected.";
         if (failed > 0) return "Some official sources could not be safely read. Saved valid counts were preserved.";
+        if (offline > 0) return "You appear to be offline. Showing saved official counts; the app will retry automatically.";
         if (cached > 0) return "Recently checked. Source-friendly limits kept the saved official counts.";
         return "No meaningful official count changes were detected.";
     }
@@ -476,7 +478,7 @@ public class MainActivity extends Activity {
         if (prefs.getBoolean("notification_explained", false)) return;
         new AlertDialog.Builder(this)
                 .setTitle("Fish-count update notifications")
-                .setMessage("Notifications show official reporting dates, daily and cumulative counts, revisions, and historical comparisons. They never promise fishing success. Android requires permission before DeRaeve can place updates in your notification shade.")
+                .setMessage("Notifications show official reporting dates, daily and cumulative counts, revisions, and historical comparisons. They never promise fishing success. Android requires permission before Salmon Tracker can place updates in your notification shade.")
                 .setNegativeButton("Not now", (dialog, which) -> prefs.edit().putBoolean("notification_explained", true).apply())
                 .setPositiveButton("Enable notifications", (dialog, which) -> {
                     prefs.edit().putBoolean("notification_explained", true).apply();

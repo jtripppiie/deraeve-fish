@@ -1,4 +1,4 @@
-package com.tripperdee.deraevfish;
+package com.tripperdee.salmontracker;
 
 import android.Manifest;
 import android.app.Activity;

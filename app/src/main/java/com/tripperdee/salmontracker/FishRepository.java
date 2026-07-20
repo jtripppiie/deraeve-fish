@@ -1,4 +1,4 @@
-package com.tripperdee.deraevfish;
+package com.tripperdee.salmontracker;
 
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -15,7 +15,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.LocalDate;
@@ -38,7 +41,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class FishRepository {
-    private static final String TAG = "DeRaeveSync";
+    private static final String TAG = "SalmonTrackerSync";
     private static final ZoneId ALASKA = ZoneId.of("America/Anchorage");
     private static final long MIN_CHECK_INTERVAL_MS = TimeUnit.HOURS.toMillis(4);
     private static final long BREAKER_MS = TimeUnit.HOURS.toMillis(24);
@@ -84,14 +87,21 @@ public class FishRepository {
         public final String message;
         public final boolean sourceFailure;
         public final boolean breakerOpened;
+        public final boolean offline;
         public final AppDatabase.Announcement announcement;
 
         SyncResult(Project project, String message, boolean sourceFailure, boolean breakerOpened,
                    AppDatabase.Announcement announcement) {
+            this(project, message, sourceFailure, breakerOpened, false, announcement);
+        }
+
+        SyncResult(Project project, String message, boolean sourceFailure, boolean breakerOpened,
+                   boolean offline, AppDatabase.Announcement announcement) {
             this.project = project;
             this.message = message;
             this.sourceFailure = sourceFailure;
             this.breakerOpened = breakerOpened;
+            this.offline = offline;
             this.announcement = announcement;
         }
     }
@@ -132,6 +142,7 @@ public class FishRepository {
             return new SyncResult(project, "Recently checked; using cached data", false, false, null);
         }
 
+        long previousAttempt = state.lastAttempt;
         state.lastAttempt = now;
         dao.upsertState(state);
 
@@ -214,6 +225,17 @@ public class FishRepository {
                     inserted[0] == null ? "No meaningful official count change" : "New official count change detected";
             return new SyncResult(project, message, false, false, inserted[0]);
         } catch (Exception error) {
+            if (isConnectivityError(error)) {
+                Log.i(TAG, "Transient connectivity issue for " + project.id + "; will retry", error);
+                // A DNS/offline/timeout blip means the source was never reached. Don't count it
+                // toward the circuit breaker, and leave lastAttempt untouched so the next attempt
+                // (e.g. once the VPN/network is back) can run instead of being throttled.
+                state.lastAttempt = previousAttempt;
+                state.lastError = "Temporarily offline \u2014 will retry when connected";
+                dao.upsertState(state);
+                return new SyncResult(project, "Temporarily offline; will retry when connected",
+                        false, false, true, null);
+            }
             Log.w(TAG, "Sync failed for " + project.id, error);
             state.failureCount += 1;
             state.lastError = error.getClass().getSimpleName() + ": " + safeMessage(error);
@@ -275,7 +297,7 @@ public class FishRepository {
         connection.setReadTimeout(25_000);
         connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("Accept", "application/json,text/html;q=0.8");
-        connection.setRequestProperty("User-Agent", "DeRaeveFishCount/0.2 Android (unofficial ADF&G client)");
+        connection.setRequestProperty("User-Agent", "SalmonTracker/0.2 Android (unofficial ADF&G client)");
         if (etag != null && !etag.isBlank()) connection.setRequestProperty("If-None-Match", etag);
         if (lastModified != null && !lastModified.isBlank()) connection.setRequestProperty("If-Modified-Since", lastModified);
         int status = connection.getResponseCode();
@@ -454,6 +476,17 @@ public class FishRepository {
 
     private static String safeMessage(Exception error) {
         return error.getMessage() == null ? "Unknown error" : error.getMessage();
+    }
+
+    private static boolean isConnectivityError(Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            if (t instanceof UnknownHostException
+                    || t instanceof SocketTimeoutException
+                    || t instanceof SocketException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static String safe(String value) { return value == null ? "" : value; }

@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.tripperdee.deraevfish"
+    namespace = "com.tripperdee.salmontracker"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.tripperdee.deraevfish"
+        applicationId = "com.tripperdee.salmontracker"
         minSdk = 33
         targetSdk = 36
         versionCode = 2

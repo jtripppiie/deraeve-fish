@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DeRaeve Fish Count</string>
-    <string name="notification_channel_name">DeRaeve Fish Count Updates</string>
-    <string name="notification_channel_description">Official fish-count changes detected by the unofficial DeRaeve client.</string>
+    <string name="app_name">Salmon Tracker</string>
+    <string name="notification_channel_name">Salmon Tracker Updates</string>
+    <string name="notification_channel_description">Official fish-count changes detected by the unofficial Salmon Tracker client.</string>
 </resources>
