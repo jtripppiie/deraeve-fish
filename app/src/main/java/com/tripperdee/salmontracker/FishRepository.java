@@ -77,6 +77,7 @@ public class FishRepository {
 
     public static final List<Project> PROJECTS = List.of(
             new Project("kenai-sockeye-late", "Kenai River sockeye", "Kenai River", "Sockeye", "Late run", 40, 420),
+            new Project("kenai-king-late", "Kenai River king salmon", "Kenai River", "Chinook", "Late run", 72, 412),
             new Project("kasilof-sockeye", "Kasilof River sockeye", "Kasilof River", "Sockeye", "Main run", 41, 420),
             new Project("russian-sockeye-early", "Russian River sockeye — early run", "Russian River", "Sockeye", "Early run", 13, 421),
             new Project("russian-sockeye-late", "Russian River sockeye — late run", "Russian River", "Sockeye", "Late run", 13, 422)
@@ -121,7 +122,8 @@ public class FishRepository {
     public List<Project> followedProjects() {
         List<Project> result = new ArrayList<>();
         for (Project p : PROJECTS) {
-            boolean defaultFollow = p.id.equals("kenai-sockeye-late") || p.id.equals("kasilof-sockeye");
+            boolean defaultFollow = p.id.equals("kenai-sockeye-late") || p.id.equals("kenai-king-late") ||
+                    p.id.equals("kasilof-sockeye");
             if (prefs.getBoolean("follow_" + p.id, defaultFollow)) result.add(p);
         }
         return result;

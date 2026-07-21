@@ -9,6 +9,17 @@ import static org.junit.Assert.*;
 public class AdfgParserTest {
     private final FishRepository.Project project = FishRepository.PROJECTS.get(0);
 
+    @Test public void includesKenaiLateRunKingProject() {
+        FishRepository.Project king = FishRepository.PROJECTS.stream()
+                .filter(item -> item.id.equals("kenai-king-late"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals("Chinook", king.species);
+        assertEquals("Late run", king.run);
+        assertEquals(72, king.locationId);
+        assertEquals(412, king.speciesId);
+    }
+
     @Test public void parsesObjectRows() throws Exception {
         String json = "{\"data\":[{\"Date\":\"07/17\",\"Daily Count\":\"14,545\",\"Cumulative Count\":\"153,945\",\"Notes\":\"Preliminary\"}]}";
         List<AppDatabase.CountRecord> rows = FishRepository.parseOfficialPayload(json, project, 2026, 1L);

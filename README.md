@@ -11,7 +11,7 @@ An unofficial Android client for selected public Alaska Department of Fish and G
 - Transient connectivity failures (offline, VPN/DNS blips, timeouts) are treated as retryable and do not trip the source circuit breaker.
 - Alaska-time reporting, manual refresh, notification permission controls, grouped alerts, quiet-hour handling, project muting, and deep links.
 - Settings-based notification simulations for new counts, revised counts, and multiple-location updates.
-- Seven-day, 14-day, 30-day, and season chart ranges with previous-year comparison.
+- Seven-day, 14-day, and season chart ranges with selectable reference runs from the previous five years.
 - Local-only followed-project and preference storage. No account or analytics SDK is included.
 
 ## Important limitations

@@ -305,8 +305,13 @@ public class MainActivity extends Activity {
             for (FishRepository.Project project : repository.followedProjects()) {
                 AppDatabase.CountRecord latest = dao.latest(project.id);
                 List<AppDatabase.CountRecord> currentYear = latest == null ? List.of() : dao.recordsForYear(project.id, latest.year);
-                List<AppDatabase.CountRecord> previousYear = latest == null ? List.of() : dao.recordsForYear(project.id, latest.year - 1);
-                snapshots.add(new ProjectSnapshot(project, latest, dao.recent(project.id, 12), currentYear, previousYear, dao.state(project.id)));
+                Map<Integer, List<AppDatabase.CountRecord>> referenceYears = new HashMap<>();
+                if (latest != null) {
+                    for (int year = latest.year - 1; year >= latest.year - 5; year--) {
+                        referenceYears.put(year, dao.recordsForYear(project.id, year));
+                    }
+                }
+                snapshots.add(new ProjectSnapshot(project, latest, dao.recent(project.id, 12), currentYear, referenceYears, dao.state(project.id)));
             }
             runOnUiThread(() -> renderSnapshots(snapshots));
         });
@@ -362,7 +367,8 @@ public class MainActivity extends Activity {
         LinearLayout metrics = new LinearLayout(this);
         metrics.setOrientation(LinearLayout.HORIZONTAL);
         metrics.addView(metricBox("SEASON TOTAL", FishLogic.formatNumber(snapshot.latest.cumulativeCount), RIVER_BLUE), weighted(1, 0, 0, 5, 0));
-        AppDatabase.CountRecord prior = sameMonthDay(snapshot.previousYear, snapshot.latest.reportDate.substring(5));
+        List<AppDatabase.CountRecord> previousYear = snapshot.referenceYears.getOrDefault(snapshot.latest.year - 1, List.of());
+        AppDatabase.CountRecord prior = sameMonthDay(previousYear, snapshot.latest.reportDate.substring(5));
         String comparison = prior == null ? "No match" : signedPercent(FishLogic.percentChange(snapshot.latest.cumulativeCount, prior.cumulativeCount));
         metrics.addView(metricBox("VS LAST YEAR", comparison, comparison.startsWith("-") ? Color.rgb(164, 74, 57) : RIVER_BLUE), weighted(1, 5, 0, 0, 0));
         card.addView(metrics, matchWrap(0, 11, 0, 0));
@@ -404,7 +410,7 @@ public class MainActivity extends Activity {
         card.addView(horizontal);
 
         card.addView(text("Count trend", 15, RIVER_DARK, true), matchWrap(0, 12, 0, 6));
-        ChartView chart = new ChartView(this, snapshot.currentYear, snapshot.previousYear);
+        ChartView chart = new ChartView(this, snapshot.currentYear, snapshot.referenceYears, snapshot.latest.year - 1);
         card.addView(chart, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(184)));
         card.addView(chartControls(chart), matchWrap(0, 6, 0, 0));
         return card;
@@ -449,6 +455,23 @@ public class MainActivity extends Activity {
             });
         }
         wrapper.addView(rangeRow);
+
+        HorizontalScrollView referenceScroll = new HorizontalScrollView(this);
+        referenceScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout referenceRow = new LinearLayout(this);
+        referenceRow.setPadding(0, dp(8), 0, 0);
+        List<TextView> referenceButtons = new ArrayList<>();
+        for (int year : chart.referenceYears()) {
+            TextView button = chartChip(String.valueOf(year), year == chart.referenceYear());
+            referenceButtons.add(button);
+            referenceRow.addView(button, referenceButtons.size() == 1 ? wrap(0, 0, 0, 0) : wrap(6, 0, 0, 0));
+            button.setOnClickListener(v -> {
+                chart.setReferenceYear(year);
+                for (TextView item : referenceButtons) styleChartChip(item, item == button);
+            });
+        }
+        referenceScroll.addView(referenceRow);
+        wrapper.addView(referenceScroll);
         return wrapper;
     }
 
@@ -675,7 +698,7 @@ public class MainActivity extends Activity {
             AppDatabase.CountRecord latest,
             List<AppDatabase.CountRecord> recent,
             List<AppDatabase.CountRecord> currentYear,
-            List<AppDatabase.CountRecord> previousYear,
+            Map<Integer, List<AppDatabase.CountRecord>> referenceYears,
             AppDatabase.SyncState state
     ) {}
 
@@ -757,21 +780,44 @@ public class MainActivity extends Activity {
 
     private static class ChartView extends View {
         private final List<AppDatabase.CountRecord> current;
+        private final Map<Integer, List<AppDatabase.CountRecord>> references;
         private final Map<String, AppDatabase.CountRecord> previousByMonthDay = new HashMap<>();
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private int rangeDays = 14;
         private boolean cumulative;
         private int selectedIndex = -1;
+        private int referenceYear;
 
-        ChartView(android.content.Context context, List<AppDatabase.CountRecord> current, List<AppDatabase.CountRecord> previous) {
+        ChartView(android.content.Context context, List<AppDatabase.CountRecord> current,
+                  Map<Integer, List<AppDatabase.CountRecord>> references, int referenceYear) {
             super(context);
             this.current = new ArrayList<>(current);
-            for (AppDatabase.CountRecord record : previous) {
-                if (record.reportDate.length() >= 10) previousByMonthDay.put(record.reportDate.substring(5), record);
-            }
+            this.references = new HashMap<>(references);
+            setReferenceYear(referenceYear);
             setClickable(true);
             setContentDescription(buildDescription());
+        }
+
+        List<Integer> referenceYears() {
+            List<Integer> years = new ArrayList<>(references.keySet());
+            years.sort(java.util.Collections.reverseOrder());
+            return years;
+        }
+
+        int referenceYear() {
+            return referenceYear;
+        }
+
+        void setReferenceYear(int year) {
+            referenceYear = year;
+            previousByMonthDay.clear();
+            for (AppDatabase.CountRecord record : references.getOrDefault(year, List.of())) {
+                if (record.reportDate.length() >= 10) previousByMonthDay.put(record.reportDate.substring(5), record);
+            }
+            selectedIndex = -1;
+            setContentDescription(buildDescription());
+            invalidate();
         }
 
         void setRangeDays(int days) {
@@ -918,7 +964,7 @@ public class MainActivity extends Activity {
             canvas.drawText("This year", 18f * density, 20f * density, textPaint);
             paint.setColor(RIVER_MID);
             canvas.drawCircle(78f * density, 16f * density, 3.5f * density, paint);
-            canvas.drawText("Last year", 86f * density, 20f * density, textPaint);
+            canvas.drawText(String.valueOf(referenceYear), 86f * density, 20f * density, textPaint);
             String mode = cumulative ? "Cumulative" : "Daily";
             float modeWidth = textPaint.measureText(mode);
             canvas.drawText(mode, getWidth() - modeWidth - 8f * density, 20f * density, textPaint);
@@ -936,7 +982,7 @@ public class MainActivity extends Activity {
             canvas.drawLine(x, top, x, bottom, paint);
 
             String firstLine = shortDate(record.reportDate) + "  " + shortNumber(value(record));
-            String secondLine = prior == null ? "No same-date prior-year record" : "Last year " + shortNumber(value(prior));
+            String secondLine = prior == null ? "No same-date " + referenceYear + " record" : referenceYear + "  " + shortNumber(value(prior));
             textPaint.setTextSize(10f * density);
             float width = Math.max(textPaint.measureText(firstLine), textPaint.measureText(secondLine)) + 16f * density;
             float boxLeft = Math.min(Math.max(4f * density, x - width / 2f), getWidth() - width - 4f * density);
@@ -1007,7 +1053,7 @@ public class MainActivity extends Activity {
             AppDatabase.CountRecord latest = visible.get(visible.size() - 1);
             return (cumulative ? "Cumulative" : "Daily") + " fish-count chart, " +
                     (rangeDays <= 0 ? "full season" : rangeDays + " days") + ". Latest value " + value(latest) +
-                    " on " + latest.reportDate + ". Solid salmon line is this year and dashed blue line is last year.";
+                    " on " + latest.reportDate + ". Solid salmon line is this year and dashed blue line is " + referenceYear + ".";
         }
 
         private static String shortDate(String iso) {

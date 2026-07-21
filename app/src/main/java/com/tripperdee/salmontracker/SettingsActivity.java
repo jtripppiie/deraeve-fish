@@ -150,7 +150,8 @@ public class SettingsActivity extends Activity {
 
         LinearLayout projects = card("Followed count projects", "Only selected projects are checked and shown on the home screen.");
         for (FishRepository.Project project : FishRepository.PROJECTS) {
-            boolean defaultFollow = project.id.equals("kenai-sockeye-late") || project.id.equals("kasilof-sockeye");
+            boolean defaultFollow = project.id.equals("kenai-sockeye-late") || project.id.equals("kenai-king-late") ||
+                    project.id.equals("kasilof-sockeye");
             CheckBox box = new CheckBox(this);
             box.setText(project.name + "\n" + project.location + " • " + project.run);
             box.setTextColor(RIVER_DARK);
