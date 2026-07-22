@@ -38,6 +38,26 @@ public class AdfgParserTest {
         assertEquals(356214, rows.get(0).cumulativeCount);
     }
 
+    @Test public void parsesOfficialColumnarKingRowsAndCalculatesCumulativeCounts() throws Exception {
+        String json = "{\"COLUMNS\":[\"YEAR\",\"COUNTDATE\",\"FISHCOUNT\",\"SPECIESID\",\"COUNTLOCATIONID\"]," +
+                "\"DATA\":[[2025,\"July, 01 2025 00:00:00\",120,412,72]," +
+                "[2025,\"July, 02 2025 00:00:00\",126,412,72]]}";
+        FishRepository.Project king = FishRepository.PROJECTS.stream()
+                .filter(item -> item.id.equals("kenai-king-late"))
+                .findFirst()
+                .orElseThrow();
+
+        List<AppDatabase.CountRecord> rows = FishRepository.parseOfficialPayload(json, king, 2025, 1L);
+
+        assertEquals(2, rows.size());
+        assertEquals("2025-07-01", rows.get(0).reportDate);
+        assertEquals(120, rows.get(0).dailyCount);
+        assertEquals(120, rows.get(0).cumulativeCount);
+        assertEquals("2025-07-02", rows.get(1).reportDate);
+        assertEquals(126, rows.get(1).dailyCount);
+        assertEquals(246, rows.get(1).cumulativeCount);
+    }
+
     @Test public void formattingOnlyChangesDoNotAffectFingerprint() throws Exception {
         String a = "[[\"07/18\",\"18,426\",\"356,214\"]]";
         String b = "[[\"07/18\",18426,356214]]";

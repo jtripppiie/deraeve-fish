@@ -149,15 +149,18 @@ public class FishRepository {
         dao.upsertState(state);
 
         boolean firstLoad = dao.recordCount(project.id) == 0;
+        String historyKey = "history_schema_2_" + project.id;
+        boolean needsHistoricalBackfill = firstLoad || !prefs.getBoolean(historyKey, false);
         int currentYear = LocalDate.now(ALASKA).getYear();
-        int startYear = firstLoad ? currentYear - 5 : currentYear;
+        int startYear = needsHistoricalBackfill ? currentYear - 5 : currentYear;
         List<AppDatabase.CountRecord> all = new ArrayList<>();
         String latestEtag = null;
         String latestModified = null;
 
         try {
             for (int year = startYear; year <= currentYear; year++) {
-                FetchResponse response = fetchJson(project, year, state, year == currentYear);
+                FetchResponse response = fetchJson(project, year, state,
+                        year == currentYear && !needsHistoricalBackfill);
                 if (response.notModified && year == currentYear) {
                     state.lastSuccess = now;
                     state.failureCount = 0;
@@ -222,6 +225,7 @@ public class FishRepository {
                 }
                 dao.upsertState(finalState);
             });
+            prefs.edit().putBoolean(historyKey, true).apply();
 
             String message = firstLoad ? "Initial official baseline saved" :
                     inserted[0] == null ? "No meaningful official count change" : "New official count change detected";
@@ -320,7 +324,7 @@ public class FishRepository {
                                                                       int year, long retrievedAt) throws Exception {
         Object root = new JSONTokener(body).nextValue();
         List<RawRow> raw = new ArrayList<>();
-        collectRows(root, raw, year);
+        if (!collectColumnarRows(root, raw)) collectRows(root, raw, year);
         Map<String, AppDatabase.CountRecord> deduped = new LinkedHashMap<>();
         for (RawRow row : raw) {
             String iso = normalizeDate(row.date, year);
@@ -341,6 +345,34 @@ public class FishRepository {
             deduped.put(iso, record);
         }
         return new ArrayList<>(deduped.values());
+    }
+
+    private static boolean collectColumnarRows(Object root, List<RawRow> out) throws JSONException {
+        if (!(root instanceof JSONObject object)) return false;
+        JSONArray columns = object.optJSONArray("COLUMNS");
+        JSONArray data = object.optJSONArray("DATA");
+        if (columns == null || data == null) return false;
+
+        int dateIndex = -1;
+        int dailyIndex = -1;
+        for (int i = 0; i < columns.length(); i++) {
+            String key = normalizeKey(columns.optString(i));
+            if (key.equals("countdate") || key.equals("date")) dateIndex = i;
+            if (key.equals("fishcount") || key.equals("dailycount")) dailyIndex = i;
+        }
+        if (dateIndex < 0 || dailyIndex < 0) return false;
+
+        long cumulative = 0;
+        for (int i = 0; i < data.length(); i++) {
+            JSONArray row = data.optJSONArray(i);
+            if (row == null) continue;
+            String date = row.optString(dateIndex);
+            Long daily = parseLong(row.optString(dailyIndex));
+            if (date.isBlank() || daily == null || daily < 0) continue;
+            cumulative += daily;
+            out.add(new RawRow(date, String.valueOf(daily), String.valueOf(cumulative), ""));
+        }
+        return true;
     }
 
     public static List<AppDatabase.CountRecord> parseHtmlPayload(String body, Project project,
@@ -422,7 +454,8 @@ public class FishRepository {
         List<DateTimeFormatter> formats = Arrays.asList(
                 DateTimeFormatter.ISO_LOCAL_DATE,
                 DateTimeFormatter.ofPattern("M/d/uuuu", Locale.US),
-                DateTimeFormatter.ofPattern("MM/dd/uuuu", Locale.US)
+                DateTimeFormatter.ofPattern("MM/dd/uuuu", Locale.US),
+                DateTimeFormatter.ofPattern("MMMM, dd uuuu HH:mm:ss", Locale.US)
         );
         for (DateTimeFormatter formatter : formats) {
             try { return LocalDate.parse(cleaned, formatter).toString(); } catch (DateTimeParseException ignored) {}
