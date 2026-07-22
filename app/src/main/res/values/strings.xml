@@ -3,4 +3,6 @@
     <string name="app_name">Salmon Tracker</string>
     <string name="notification_channel_name">Salmon Tracker Updates</string>
     <string name="notification_channel_description">Official fish-count changes detected by the unofficial Salmon Tracker client.</string>
+    <string name="followed_project_summary">%1$s\n%2$s • %3$s</string>
+    <string name="app_version">Salmon Tracker %1$s</string>
 </resources>

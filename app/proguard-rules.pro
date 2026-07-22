@@ -1,1 +1,1 @@
-# Release minification is disabled for this test build.
+# Release minification is currently disabled. Keep rules here when enabling R8.

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="river_blue">#0A5275</color>
     <color name="river_dark">#073447</color>
     <color name="salmon">#F16D5B</color>
-    <color name="ice">#F3FAFC</color>
     <color name="launcher_background">#073447</color>
 </resources>

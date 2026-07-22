@@ -2,12 +2,14 @@ package com.tripperdee.salmontracker;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.NotificationManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.Gravity;
@@ -39,6 +41,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class SettingsActivity extends Activity {
+    private static final String ADFG_COUNTS_URL = "https://www.adfg.alaska.gov/sf/FishCounts/";
+    private static final String PRIVACY_POLICY = "Salmon Tracker Privacy Policy\n\n" +
+            "Last updated: July 21, 2026\n\n" +
+            "Salmon Tracker does not require an account and does not collect, sell, or share personal information with the app developer. Followed projects, notification preferences, synchronization status, and downloaded fish counts are stored locally on your device. Android backup is disabled for this app.\n\n" +
+            "The app connects directly to the Alaska Department of Fish and Game website to retrieve public fish-count data. As with any web request, that government-operated service may receive standard technical information such as your IP address and user agent under its own practices. The app does not send advertising identifiers, analytics events, precise location, contacts, photos, or user-entered content.\n\n" +
+            "Notifications are generated locally from saved count updates. You may disable notifications or background synchronization in Settings, clear app data through Android Settings, or uninstall the app to remove its local data.\n\n" +
+            "Salmon Tracker is an independent, unofficial app. It is not affiliated with or endorsed by the State of Alaska or the Alaska Department of Fish and Game. Source counts remain subject to revision.\n\n" +
+            "Privacy questions and support: github.com/jtripppiie/deraeve-fish/issues";
     private static final int REQ_NOTIFICATION = 201;
     private static final int RIVER_DARK = Color.rgb(7, 52, 71);
     private static final int RIVER_BLUE = Color.rgb(10, 82, 117);
@@ -153,7 +163,7 @@ public class SettingsActivity extends Activity {
             boolean defaultFollow = project.id.equals("kenai-sockeye-late") || project.id.equals("kenai-king-late") ||
                     project.id.equals("kasilof-sockeye");
             CheckBox box = new CheckBox(this);
-            box.setText(project.name + "\n" + project.location + " • " + project.run);
+            box.setText(getString(R.string.followed_project_summary, project.name, project.location, project.run));
             box.setTextColor(RIVER_DARK);
             box.setChecked(prefs.getBoolean("follow_" + project.id, defaultFollow));
             box.setTag(project.id);
@@ -226,6 +236,16 @@ public class SettingsActivity extends Activity {
         developer.addView(debugPanel);
         debugMode.setOnCheckedChangeListener((buttonView, isChecked) -> debugPanel.setVisibility(isChecked ? View.VISIBLE : View.GONE));
         content.addView(developer, margin(0, 0, 0, 16));
+
+        LinearLayout about = card("About, source & privacy", "Salmon Tracker is independent and unofficial. It is not affiliated with or endorsed by the State of Alaska or the Alaska Department of Fish and Game.");
+        TextView source = secondaryButton("OPEN OFFICIAL ADF&G FISH COUNTS");
+        source.setOnClickListener(view -> openUrl(ADFG_COUNTS_URL));
+        about.addView(source);
+        TextView privacy = secondaryButton("READ PRIVACY POLICY");
+        privacy.setOnClickListener(view -> showPrivacyPolicy());
+        about.addView(privacy, margin(0, 8, 0, 0));
+        about.addView(note(getString(R.string.app_version, BuildConfig.VERSION_NAME)));
+        content.addView(about, margin(0, 0, 0, 16));
 
         TextView save = actionButton("SAVE SETTINGS");
         save.setOnClickListener(view -> save());
@@ -336,6 +356,19 @@ public class SettingsActivity extends Activity {
         intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
         intent.putExtra(Settings.EXTRA_CHANNEL_ID, FishApplication.CHANNEL_COUNTS);
         startActivity(intent);
+    }
+
+    private void openUrl(String url) {
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+    }
+
+    private void showPrivacyPolicy() {
+        new AlertDialog.Builder(this)
+                .setTitle("Privacy policy")
+                .setMessage(PRIVACY_POLICY)
+                .setNegativeButton("Official source", (dialog, which) -> openUrl(ADFG_COUNTS_URL))
+                .setPositiveButton("Close", null)
+                .show();
     }
 
     private LinearLayout card(String title, String subtitle) {

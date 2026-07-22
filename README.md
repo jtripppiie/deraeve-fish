@@ -33,3 +33,7 @@ Debug APK output:
 ```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
+
+Release preparation, signing, store copy, declarations, and asset requirements are documented in
+[`docs/PLAY-SUBMISSION.md`](docs/PLAY-SUBMISSION.md). The publishable privacy page is
+[`docs/privacy-policy.html`](docs/privacy-policy.html).

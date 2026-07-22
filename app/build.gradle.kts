@@ -6,12 +6,16 @@ android {
     namespace = "com.tripperdee.salmontracker"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.tripperdee.salmontracker"
         minSdk = 33
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0-polished-test"
+        versionCode = 3
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         javaCompileOptions {
@@ -21,10 +25,28 @@ android {
         }
     }
 
+    val releaseStoreFile = providers.environmentVariable("SALMON_UPLOAD_STORE_FILE").orNull
+    val releaseStorePassword = providers.environmentVariable("SALMON_UPLOAD_STORE_PASSWORD").orNull
+    val releaseKeyAlias = providers.environmentVariable("SALMON_UPLOAD_KEY_ALIAS").orNull
+    val releaseKeyPassword = providers.environmentVariable("SALMON_UPLOAD_KEY_PASSWORD").orNull
+
+    signingConfigs {
+        if (releaseStoreFile != null && releaseStorePassword != null &&
+            releaseKeyAlias != null && releaseKeyPassword != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
